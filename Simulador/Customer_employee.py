@@ -10,7 +10,6 @@
 
 import psycopg2
 from faker import Faker
-
 fake = Faker()
 from random import randint
 import random
