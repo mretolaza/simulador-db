@@ -16,7 +16,7 @@ activity_logs = {}
 # script params
 print(len(sys.argv))
 csv_name = './log_' + format(datetime.now()) if len(sys.argv) <= 2 else sys.argv[2]
-action_times = sys.argv[1]
+action_times = int(sys.argv[1])
 
 def increment_log(action):
     if action in activity_logs.keys():
