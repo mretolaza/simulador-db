@@ -18,21 +18,22 @@ print(len(sys.argv))
 csv_name = './log_' + format(datetime.now()) if len(sys.argv) <= 2 else sys.argv[2]
 action_times = int(sys.argv[1])
 
-def increment_log(action):
+def increment_log(action, item):
     if action in activity_logs.keys():
-        activity_logs[action] = activity_logs[action] + 1
+        activity_logs[action].append(item)
     else:
-        activity_logs[action] = 1
+        activity_logs[action] = [item]
 
 # csv generator
 def csv_gen():
-    with open(csv_name, 'w') as csvfile:
-        fieldnames = ['action', 'count']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    for a in activity_logs.keys():
+        with open(csv_name + a.replace(' ', '_') + '.csv', 'w') as csvfile:
+            fieldnames = activity_logs[a][0].keys()
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        writer.writeheader()
-        for key in activity_logs.keys():
-            writer.writerow({'action': key, 'count': activity_logs[key]})
+            writer.writeheader()
+            for item in activity_logs[a]:
+                writer.writerow(item)
 
 # psycopg2
 
@@ -65,6 +66,7 @@ def select_rows(conn, fields, table, where, extra):
     return rows
 
 def insert(conn, table, fields, values):
+    print values
     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
     try:
         placeholders = []
@@ -84,7 +86,7 @@ def new_client():
     supportId = select_rows(connection, '"EmployeeId"', '"Employee"', None, "ORDER BY random() LIMIT 1")[0]['EmployeeId']
     (query, item) = insert(connection, '"Customer"', ' "FirstName", "LastName", "Company", "Address", "City", "State", "Country", "PostalCode", "Phone", "Fax", "Email", "SupportRepId" ',
            [fake.first_name(),fake.last_name(), fake.company(),  fake.address(), fake.city(), fake.state() ,fake.country(), fake.postcode(), fake.phone_number(), fake.phone_number(), fake.email(), int(supportId) ])
-    increment_log('new customer')
+    increment_log('new customer', item)
 
 
 def new_track(album_default = None, genre_default = None):
@@ -94,9 +96,9 @@ def new_track(album_default = None, genre_default = None):
     genre = genre_default if genre_default is not None else select_rows(connection, '"GenreId"', '"Genre"', None, "ORDER BY random() LIMIT 1")[0]['GenreId']
     milis = long(uniform(1.5, 5) * 1000 * 60)
     byte = int(milis / 1024)
-    insert(connection, '"Track"', ' "Name", "AlbumId", "MediaTypeId", "GenreId", "Composer", "Milliseconds", "Bytes", "UnitPrice" ',
+    (query, item)=insert(connection, '"Track"', ' "Name", "AlbumId", "MediaTypeId", "GenreId", "Composer", "Milliseconds", "Bytes", "UnitPrice" ',
            [fake.sentence(nb_words=randint(1,4)), album, mediaType, genre, fake.name(), milis, byte, round(uniform(.5,3), 2)])
-    increment_log('new track')
+    increment_log('new track', item)
 
 def new_album(artistId_default = None):
     cprint('new album', 'green')
@@ -104,7 +106,7 @@ def new_album(artistId_default = None):
     (query , item) = insert(connection, '"Album"', ' "Title", "ArtistId" ', [fake.sentence(nb_words=randint(1,4)), artist])
     for i in range(2, 10):
         new_track(item['AlbumId'])
-    increment_log('new album')
+    increment_log('new album', item)
 
 def new_order():
     cprint('new invoice', 'green')
@@ -129,24 +131,24 @@ def new_order():
     for t in tracks:
         insert(connection, '"InvoiceLine"', ' "InvoiceId", "TrackId", "UnitPrice", "Quantity" ',
                [item['InvoiceId'], t['TrackId'], t['UnitPrice'], t['Quantity']])
-    increment_log('new invoice')
+    increment_log('new invoice', item)
 
 def new_artist():
     (query, item) = insert(connection, '"Artist"', '"Name"', [fake.name()])
     new_album(item['ArtistId'])
-    increment_log('new artist')
+    increment_log('new artist', item)
 
 def new_playlist():
     (query, item) = insert(connection, '"Playlist"', '"Name"', [fake.sentence(nb_words=randint(1,4))])
     tracks = select_rows(connection, '"TrackId"', '"Track"', None, "ORDER BY random() LIMIT " + str(randint(1,10)))
     for t in tracks:
         insert(connection, '"PlaylistTrack"', '"PlaylistId", "TrackId"', [item['PlaylistId'], t['TrackId']])
-    increment_log('new playlist')
+    increment_log('new playlist', item)
 
 def new_genre():
     (query, item) = insert(connection, '"Genre"', '"Name"', [fake.sentence(nb_words=1)])
     new_track(genre_default=item['GenreId'])
-    increment_log('new genre')
+    increment_log('new genre', item)
 
 def random_activity_parser(activity):
     if activity == 0:
