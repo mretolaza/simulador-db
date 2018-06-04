@@ -15,7 +15,7 @@ activity_logs = {}
 
 # script params
 print(len(sys.argv))
-csv_name = './log_' + format(datetime.now()) if len(sys.argv) <= 2 else sys.argv[2]
+csv_name = './log_' + format(datetime.now()) if len(sys.argv) <= 2 else sys.argv[2].replace('.csv', '')
 action_times = int(sys.argv[1])
 
 def increment_log(action, item):
@@ -27,7 +27,7 @@ def increment_log(action, item):
 # csv generator
 def csv_gen():
     for a in activity_logs.keys():
-        with open(csv_name + a.replace(' ', '_') + '.csv', 'w') as csvfile:
+        with open(csv_name + '_' + a.replace(' ', '_') + '.csv', 'w') as csvfile:
             fieldnames = activity_logs[a][0].keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -85,7 +85,7 @@ def new_client():
     cprint('new customer', 'green')
     supportId = select_rows(connection, '"EmployeeId"', '"Employee"', None, "ORDER BY random() LIMIT 1")[0]['EmployeeId']
     (query, item) = insert(connection, '"Customer"', ' "FirstName", "LastName", "Company", "Address", "City", "State", "Country", "PostalCode", "Phone", "Fax", "Email", "SupportRepId" ',
-           [fake.first_name(),fake.last_name(), fake.company(),  fake.address(), fake.city(), fake.state() ,fake.country(), fake.postcode(), fake.phone_number(), fake.phone_number(), fake.email(), int(supportId) ])
+           [fake.first_name(),fake.last_name(), fake.company(),  fake.address()[:70], fake.city()[:40], fake.state()[:40] ,fake.country()[:40], fake.postcode(), fake.phone_number(), fake.phone_number(), fake.email(), int(supportId) ])
     increment_log('new customer', item)
 
 
