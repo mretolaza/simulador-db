@@ -1,0 +1,12 @@
+Seguir las siguientes instrucciones: 
+
+>> Deberá de correr la siguiente línea en un script *DENTRO DE LA BASE DE DATOS* 
+
+>> SELECT MAX("Ingresar id ") + 1 FROM "Nombre de la tabla"; << 
+
+Al ejecutar la línea deberá de escribir el valor que obtena en la siguiente instrucción 
+
+>> 
+CREATE SEQUENCE nombretabla_id_seq START WITH replace_id_tabla;
+ALTER TABLE "NOMBRE TABLA" ALTER COLUMN "NOMBRE ID DE TABLA"  SET DEFAULT nextval('nombretabla_id_seq');
+<<
