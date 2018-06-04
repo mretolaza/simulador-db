@@ -1,4 +1,3 @@
-
 # installation via pip install psycopg2, psycopg2-binary, termcolor, Faker
 
 import sys, csv, psycopg2
@@ -7,6 +6,7 @@ from random import randint, uniform
 from faker import Faker
 from datetime import datetime
 import psycopg2.extras
+
 # Faker
 fake = Faker('es_ES')
 
@@ -18,11 +18,13 @@ print(len(sys.argv))
 csv_name = './log_' + format(datetime.now()) if len(sys.argv) <= 2 else sys.argv[2].replace('.csv', '')
 action_times = int(sys.argv[1])
 
+
 def increment_log(action, item):
     if action in activity_logs.keys():
         activity_logs[action].append(item)
     else:
         activity_logs[action] = [item]
+
 
 # csv generator
 def csv_gen():
@@ -35,19 +37,21 @@ def csv_gen():
             for item in activity_logs[a]:
                 writer.writerow(item)
 
+
 # psycopg2
 
 def get_connection():
     try:
         conn = psycopg2.connect("dbname='mercedes' user='postgres' password=''")
-        conn.autocommit=True
+        conn.autocommit = True
         return conn
     except:
-        cprint ("Bad Connection Params.", 'red')
+        cprint("Bad Connection Params.", 'red')
         sys.exit(1)
 
+
 def select_rows(conn, fields, table, where, extra):
-    cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     query = ""
     try:
         query = "SELECT " + fields + " FROM " + table
@@ -65,9 +69,11 @@ def select_rows(conn, fields, table, where, extra):
     cur.close()
     return rows
 
+
 def insert(conn, table, fields, values):
-    print values
-    cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    print
+    values
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
         placeholders = []
         for i in fields.split(","): placeholders.append("%s")
@@ -78,77 +84,97 @@ def insert(conn, table, fields, values):
     except Exception, e:
         cprint("Error: " + str(e), 'red')
 
+
 # activities
 connection = get_connection()
 
+
 def new_client():
     cprint('new customer', 'green')
-    supportId = select_rows(connection, '"EmployeeId"', '"Employee"', None, "ORDER BY random() LIMIT 1")[0]['EmployeeId']
-    (query, item) = insert(connection, '"Customer"', ' "FirstName", "LastName", "Company", "Address", "City", "State", "Country", "PostalCode", "Phone", "Fax", "Email", "SupportRepId" ',
-           [fake.first_name(),fake.last_name(), fake.company(),  fake.address()[:70], fake.city()[:40], fake.state()[:40] ,fake.country()[:40], fake.postcode(), fake.phone_number(), fake.phone_number(), fake.email(), int(supportId) ])
+    supportId = select_rows(connection, '"EmployeeId"', '"Employee"', None, "ORDER BY random() LIMIT 1")[0][
+        'EmployeeId']
+    (query, item) = insert(connection, '"Customer"',
+                           ' "FirstName", "LastName", "Company", "Address", "City", "State", "Country", "PostalCode", "Phone", "Fax", "Email", "SupportRepId" ',
+                           [fake.first_name(), fake.last_name(), fake.company(), fake.address()[:70], fake.city()[:40],
+                            fake.state()[:40], fake.country()[:40], fake.postcode(), fake.phone_number(),
+                            fake.phone_number(), fake.email(), int(supportId)])
     increment_log('new customer', item)
 
 
-def new_track(album_default = None, genre_default = None):
+def new_track(album_default=None, genre_default=None):
     cprint('new track', 'green')
-    album = album_default if album_default is not None else select_rows(connection, '"AlbumId"', '"Album"', None, "ORDER BY random() LIMIT 1")[0]['AlbumId']
-    mediaType = select_rows(connection, '"MediaTypeId"', '"MediaType"', None, "ORDER BY random() LIMIT 1")[0]['MediaTypeId']
-    genre = genre_default if genre_default is not None else select_rows(connection, '"GenreId"', '"Genre"', None, "ORDER BY random() LIMIT 1")[0]['GenreId']
+    album = album_default if album_default is not None else \
+    select_rows(connection, '"AlbumId"', '"Album"', None, "ORDER BY random() LIMIT 1")[0]['AlbumId']
+    mediaType = select_rows(connection, '"MediaTypeId"', '"MediaType"', None, "ORDER BY random() LIMIT 1")[0][
+        'MediaTypeId']
+    genre = genre_default if genre_default is not None else \
+    select_rows(connection, '"GenreId"', '"Genre"', None, "ORDER BY random() LIMIT 1")[0]['GenreId']
     milis = long(uniform(1.5, 5) * 1000 * 60)
     byte = int(milis / 1024)
-    (query, item)=insert(connection, '"Track"', ' "Name", "AlbumId", "MediaTypeId", "GenreId", "Composer", "Milliseconds", "Bytes", "UnitPrice" ',
-           [fake.sentence(nb_words=randint(1,4)), album, mediaType, genre, fake.name(), milis, byte, round(uniform(.5,3), 2)])
+    (query, item) = insert(connection, '"Track"',
+                           ' "Name", "AlbumId", "MediaTypeId", "GenreId", "Composer", "Milliseconds", "Bytes", "UnitPrice" ',
+                           [fake.sentence(nb_words=randint(1, 4)), album, mediaType, genre, fake.name(), milis, byte,
+                            round(uniform(.5, 3), 2)])
     increment_log('new track', item)
 
-def new_album(artistId_default = None):
+
+def new_album(artistId_default=None):
     cprint('new album', 'green')
-    artist = artistId_default if artistId_default is not None else select_rows(connection, '"ArtistId"', '"Artist"', None, 'ORDER BY random() LIMIT 1')[0]['ArtistId']
-    (query , item) = insert(connection, '"Album"', ' "Title", "ArtistId" ', [fake.sentence(nb_words=randint(1,4)), artist])
+    artist = artistId_default if artistId_default is not None else \
+    select_rows(connection, '"ArtistId"', '"Artist"', None, 'ORDER BY random() LIMIT 1')[0]['ArtistId']
+    (query, item) = insert(connection, '"Album"', ' "Title", "ArtistId" ',
+                           [fake.sentence(nb_words=randint(1, 4)), artist])
     for i in range(2, 10):
         new_track(item['AlbumId'])
     increment_log('new album', item)
+
 
 def new_order():
     cprint('new invoice', 'green')
     # get customer
     customer = select_rows(connection, '*', '"Customer"', None, "ORDER BY random() LIMIT 1")[0]
-    tracks = select_rows(connection, '*', '"Track"', None, "ORDER BY random() LIMIT " + str(randint(1,10)))
+    tracks = select_rows(connection, '*', '"Track"', None, "ORDER BY random() LIMIT " + str(randint(1, 10)))
     total = 0
 
     for t in tracks:
-        t['Quantity'] = randint(1,5)
+        t['Quantity'] = randint(1, 5)
         total = total + float(t['UnitPrice']) * t['Quantity']
 
     state = customer['State'] if customer['State'] is not None else ''
-    customer_id = customer['CustomerId'] if customer['CustomerId']is not None else ''
-    address = customer['Address'] if customer['Address']is not None else ''
+    customer_id = customer['CustomerId'] if customer['CustomerId'] is not None else ''
+    address = customer['Address'] if customer['Address'] is not None else ''
     city = customer['City'] if customer['City'] is not None else ''
-    country = customer['Country'] if customer['Country']is not None else ''
+    country = customer['Country'] if customer['Country'] is not None else ''
     post_code = customer['PostalCode'] if customer['PostalCode'] is not None else ''
 
-    (query, item) = insert(connection, '"Invoice"', ' "CustomerId", "InvoiceDate", "BillingAddress", "BillingCity", "BillingState", "BillingCountry", "BillingPostalCode", "Total" ',
-               [customer_id, datetime.now(), address, city, state, country, post_code, total ])
+    (query, item) = insert(connection, '"Invoice"',
+                           ' "CustomerId", "InvoiceDate", "BillingAddress", "BillingCity", "BillingState", "BillingCountry", "BillingPostalCode", "Total" ',
+                           [customer_id, datetime.now(), address, city, state, country, post_code, total])
     for t in tracks:
         insert(connection, '"InvoiceLine"', ' "InvoiceId", "TrackId", "UnitPrice", "Quantity" ',
                [item['InvoiceId'], t['TrackId'], t['UnitPrice'], t['Quantity']])
     increment_log('new invoice', item)
+
 
 def new_artist():
     (query, item) = insert(connection, '"Artist"', '"Name"', [fake.name()])
     new_album(item['ArtistId'])
     increment_log('new artist', item)
 
+
 def new_playlist():
-    (query, item) = insert(connection, '"Playlist"', '"Name"', [fake.sentence(nb_words=randint(1,4))])
-    tracks = select_rows(connection, '"TrackId"', '"Track"', None, "ORDER BY random() LIMIT " + str(randint(1,10)))
+    (query, item) = insert(connection, '"Playlist"', '"Name"', [fake.sentence(nb_words=randint(1, 4))])
+    tracks = select_rows(connection, '"TrackId"', '"Track"', None, "ORDER BY random() LIMIT " + str(randint(1, 10)))
     for t in tracks:
         insert(connection, '"PlaylistTrack"', '"PlaylistId", "TrackId"', [item['PlaylistId'], t['TrackId']])
     increment_log('new playlist', item)
+
 
 def new_genre():
     (query, item) = insert(connection, '"Genre"', '"Name"', [fake.sentence(nb_words=1)])
     new_track(genre_default=item['GenreId'])
     increment_log('new genre', item)
+
 
 def random_activity_parser(activity):
     if activity == 0:
@@ -165,7 +191,6 @@ def random_activity_parser(activity):
         new_genre()
     else:
         new_order()
-
 
 
 for action in range(0, action_times):
