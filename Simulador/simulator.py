@@ -14,8 +14,9 @@ fake = Faker('es_ES')
 activity_logs = {}
 
 # script params
-csv_name = sys.argv[2] if sys.argv[2] is not None else './log_' + format(datetime.now())
-action_times = int(sys.argv[1])
+print(len(sys.argv))
+csv_name = './log_' + format(datetime.now()) if len(sys.argv) <= 2 else sys.argv[2]
+action_times = sys.argv[1]
 
 def increment_log(action):
     if action in activity_logs.keys():
