@@ -29,7 +29,8 @@ def increment_log(action, item):
 # csv generator
 def csv_gen():
     for a in activity_logs.keys():
-        with open(csv_name + '_' + a.replace(' ', '_') + '.csv', 'w') as csvfile:
+        filename = (csv_name + '_' + a.replace(' ', '_') + '.csv').replace(':','_')
+        with open(filename, 'w') as csvfile:
             fieldnames = activity_logs[a][0].keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -42,7 +43,7 @@ def csv_gen():
 
 def get_connection():
     try:
-        conn = psycopg2.connect("dbname='mercedes' user='postgres' password=''")
+        conn = psycopg2.connect("dbname='chinook' user='postgres' password=' '")
         conn.autocommit = True
         return conn
     except:
@@ -71,8 +72,7 @@ def select_rows(conn, fields, table, where, extra):
 
 
 def insert(conn, table, fields, values):
-    print
-    values
+    print values
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
         placeholders = []
@@ -175,6 +175,7 @@ def new_genre():
     new_track(genre_default=item['GenreId'])
     increment_log('new genre', item)
 
+# Select random functions 
 
 def random_activity_parser(activity):
     if activity == 0:
