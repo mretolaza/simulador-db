@@ -172,7 +172,6 @@ def new_playlist():
 
 def new_genre():
     (query, item) = insert(connection, '"Genre"', '"Name"', [fake.sentence(nb_words=1)])
-    new_track(genre_default=item['GenreId'])
     increment_log('new genre', item)
 
 # Select random functions 
